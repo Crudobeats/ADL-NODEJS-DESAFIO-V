@@ -1,15 +1,13 @@
 const express = require("express");
 const app = express();
-const PORT = 3002;
+const PORT = 3000;
 
 // Importación consultas 
 const { obtenerJoyas, filtrarJoyas, JoyasPorId } = require("./consultas");
 
-app.listen(PORT, () => console.log(`Servidor en el puerto ${PORT}`));
-
 // Middleware
 app.use((req, res, next) => {
-  console.log(`Se realizó una consulta a la ruta: ${req.path}`);
+  console.log(`Se realizó una consulta a la ruta: ${req.method} ${req.path}`);
   next();
 });
 
@@ -47,8 +45,12 @@ app.get("/joyas/filtros", async (req, res, next) => {
 app.get("/joyas/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
-    const joyas = await JoyasPorId(id);
-    res.json(joyas);
+    const joya = await JoyasPorId(id);
+
+    if(!joya) {
+      return res.status(404).json({error: "Joya no encontrada"});
+    }
+    res.json(joya);
   } catch (error) {
     next(error);
   }

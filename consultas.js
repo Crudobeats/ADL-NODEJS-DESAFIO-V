@@ -13,10 +13,10 @@ const PAGE_SIZE = 5;
 
 const obtenerJoyas = async ({ limit = PAGE_SIZE, order_by = "id_ASC", page = 1 }) => {
   const offset = (page - 1) * limit;
-  const [campo, direccion] = order_by.split("_");
+  const [nombre, categoria] = order_by.split("_");
   const consulta = {
     text: `SELECT * FROM inventario ORDER BY $1:name $2:raw LIMIT $3 OFFSET $4`,
-    values: [campo, direccion, limit, offset],
+    values: [nombre, categoria, limit, offset],
   };
   const { rows } = await pool.query(consulta);
   return rows;
@@ -28,7 +28,7 @@ const JoyasPorId = async (id) => {
     values: [id],
   };
   const { rows } = await pool.query(consulta);
-  return rows;
+  return rows.length > 0 ? rows : null;
 };
 
 const filtrarJoyas = async ({
@@ -42,9 +42,9 @@ const filtrarJoyas = async ({
 }) => {
   const values = [];
   let filtros = [];
+
   const agregarFiltro = (campo, comparador, valor) => {
     values.push(valor);
-    const length = values.length;
     filtros.push(`${campo} ${comparador} $${length}`);
   };
   if (metal) agregarFiltro("metal", "=", metal);
@@ -58,12 +58,13 @@ const filtrarJoyas = async ({
   }
 
   const offset = (page - 1) * limit;
-  const [campoOrden, direccionOrden] = order_by.split("_");
+  const [campoOrden, categoriaOrden] = order_by.split("_");
   consulta += ` ORDER BY $1:name $2:raw LIMIT $3 OFFSET $4`;
 
-  values.unshift(campoOrden, direccionOrden, limit, offset);
+  values.unshift(campoOrden, categoriaOrden, limit, offset);
   const { rows: inventario } = await pool.query(consulta, values);
-  return inventario;
+  const total = parseInt(totalRows[0].count);
+  return {total, results : inventario};
 };
 
 module.exports = { obtenerJoyas, filtrarJoyas, JoyasPorId };
